@@ -256,6 +256,18 @@ let respondents = [];
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
 function v(row, col) { return (row[col] || '').trim(); }
+
+// Excel auto-converts range values like "1-3" into dates ("3-Jan"). This
+// reverses that: "3-Jan" → "1 to 3", "6-Apr" → "4 to 6".
+const MONTH_NUM = { Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12 };
+function fixExcelDateRange(val) {
+  if (!val) return val;
+  const m = val.match(/^(\d+)-([A-Za-z]{3})$/);
+  if (!m) return val;
+  const monthNum = MONTH_NUM[m[2].charAt(0).toUpperCase() + m[2].slice(1).toLowerCase()];
+  if (!monthNum) return val;
+  return `${monthNum} to ${parseInt(m[1])}`;
+}
 function collectMulti(row, cols) { return cols.map(c => v(row, c)).filter(Boolean); }
 function esc(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -418,7 +430,7 @@ function parseRespondent(row) {
     allergies, medications, supplements, hospital, conditions, hasConditions,
     tobaccoUse:     v(row,'TOBACCO_USE'),
     tobaccoYrs:     v(row,'TobaccoYrs'),
-    alcohol:        v(row,'ALCOHOL_INTAKE'),
+    alcohol:        fixExcelDateRange(v(row,'ALCOHOL_INTAKE')),
     otherSubstances: v(row,'OTHER_SUBSTANCES'),
     drugs:          v(row,'Drugs'),
     exercise:       v(row,'Exercise'),
